@@ -1,42 +1,68 @@
-const API_URL = 'http://localhost/freelance-platform/backend/api';
+// ========================================
+// KONFIGURASI
+// ========================================
+const API_URL = 'http://localhost:3000/api';
 
-let token = localStorage.getItem('token');
-let user = JSON.parse(localStorage.getItem('user') || '{}');
+// ========================================
+// CEK LOGIN
+// ========================================
+const token = localStorage.getItem('token');
+const userString = localStorage.getItem('user');
 
-// Check authentication
-if (!token || user.role !== 'client') {
-    window.location.href = 'index.html';
+if (!token || !userString) {
+    window.location.href = '/';
 }
 
-// Display user name
+const user = JSON.parse(userString);
+
+if (user.role !== 'client') {
+    window.location.href = '/';
+}
+
+// ========================================
+// TAMPILKAN NAMA USER
+// ========================================
 document.getElementById('user-name').textContent = `Halo, ${user.name}`;
 
-// Logout
-document.getElementById('btn-logout').addEventListener('click', () => {
+// ========================================
+// TOMBOL LOGOUT
+// ========================================
+document.getElementById('btn-logout').onclick = function() {
     if (confirm('Yakin ingin logout?')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = 'index.html';
+        window.location.href = '/';
     }
-});
+};
 
-// Navigation
-document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-    link.addEventListener('click', (e) => {
+// ========================================
+// NAVIGASI MENU SIDEBAR
+// ========================================
+const menuLinks = document.querySelectorAll('.sidebar .nav-link');
+
+menuLinks.forEach(function(link) {
+    link.onclick = function(e) {
         e.preventDefault();
         
-        // Update active link
-        document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+        // Hapus class active dari semua menu
+        menuLinks.forEach(function(l) {
+            l.classList.remove('active');
+        });
+        
+        // Tambah class active ke menu yang diklik
         link.classList.add('active');
         
-        // Show section
-        const sectionId = link.getAttribute('data-section');
-        document.querySelectorAll('.content-section').forEach(section => {
+        // Sembunyikan semua section
+        const sections = document.querySelectorAll('.content-section');
+        sections.forEach(function(section) {
             section.style.display = 'none';
         });
+        
+        // Tampilkan section yang sesuai
+        const sectionId = link.getAttribute('data-section');
         document.getElementById(sectionId).style.display = 'block';
         
-        // Load data
+        // Load data sesuai menu
         if (sectionId === 'my-gigs') {
             loadMyGigs();
         } else if (sectionId === 'transactions') {
@@ -44,401 +70,345 @@ document.querySelectorAll('.sidebar .nav-link').forEach(link => {
         } else if (sectionId === 'profile') {
             loadProfile();
         }
-    });
+    };
 });
 
-// API Helper
-async function apiRequest(endpoint, method = 'GET', body = null) {
+// ========================================
+// FUNGSI FETCH KE API
+// ========================================
+function callAPI(endpoint, method, data) {
     const options = {
-        method,
+        method: method,
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': 'Bearer ' + token
         }
     };
 
-    if (body) {
-        options.body = JSON.stringify(body);
+    if (data) {
+        options.body = JSON.stringify(data);
     }
 
-    const response = await fetch(`${API_URL}/${endpoint}`, options);
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || 'Request failed');
-    }
-
-    return data;
+    return fetch(API_URL + '/' + endpoint, options)
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(json) {
+            if (!json.success) {
+                throw new Error(json.message || 'Terjadi kesalahan');
+            }
+            return json;
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            showMessage(error.message, 'danger');
+            throw error;
+        });
 }
 
-// Toast notification
-function showToast(message, type = 'success') {
+// ========================================
+// TAMPILKAN PESAN
+// ========================================
+function showMessage(message, type) {
     const toast = document.createElement('div');
-    toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    toast.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed top-0 end-0 m-3';
     toast.style.zIndex = '9999';
-    toast.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    toast.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     document.body.appendChild(toast);
     
-    setTimeout(() => {
+    setTimeout(function() {
         toast.remove();
     }, 3000);
 }
 
-// Create Gig
-document.getElementById('form-create-gig').addEventListener('submit', async (e) => {
+// ========================================
+// FORMAT ANGKA (Rp 1.000.000)
+// ========================================
+function formatRupiah(angka) {
+    return angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// ========================================
+// BUAT GIG BARU
+// ========================================
+document.getElementById('form-create-gig').onsubmit = function(e) {
     e.preventDefault();
-
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
-
+    
+    const title = document.getElementById('gig-title').value;
+    const description = document.getElementById('gig-description').value;
+    const category = document.getElementById('gig-category').value;
+    const budget = document.getElementById('gig-budget').value;
+    const deadline = document.getElementById('gig-deadline').value;
+    
     const gigData = {
-        title: document.getElementById('gig-title').value,
-        description: document.getElementById('gig-description').value,
-        category: document.getElementById('gig-category').value,
-        budget: parseFloat(document.getElementById('gig-budget').value),
-        deadline: document.getElementById('gig-deadline').value || null
+        title: title,
+        description: description,
+        category: category,
+        budget: parseFloat(budget),
+        deadline: deadline || null
     };
+    
+    callAPI('gigs', 'POST', gigData)
+        .then(function(result) {
+            showMessage('Gig berhasil dibuat!', 'success');
+            document.getElementById('form-create-gig').reset();
+            
+            // Pindah ke menu My Gigs
+            document.querySelector('[data-section="my-gigs"]').click();
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
+};
 
-    try {
-        await apiRequest('gigs.php', 'POST', gigData);
-        showToast('Gig berhasil dibuat!', 'success');
-        e.target.reset();
-        
-        // Switch to my gigs
-        document.querySelector('[data-section="my-gigs"]').click();
-    } catch (error) {
-        showToast('Gagal membuat gig: ' + error.message, 'danger');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Posting Gig';
-    }
-});
-
-// Load My Gigs
-async function loadMyGigs() {
-    try {
-        const result = await apiRequest('gigs.php');
-        const myGigs = result.data.filter(gig => gig.client_id == user.id);
-
-        const container = document.getElementById('gigs-list');
-        
-        if (myGigs.length === 0) {
-            container.innerHTML = `
-                <div class="col-12">
-                    <div class="text-center py-5">
-                        <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
-                        <h4 class="mt-3">Belum ada gig</h4>
-                        <p class="text-muted">Mulai posting gig pertama Anda!</p>
-                        <button class="btn btn-primary" onclick="document.querySelector('[data-section=create-gig]').click()">
-                            <i class="bi bi-plus-circle me-2"></i>Buat Gig
-                        </button>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = myGigs.map(gig => `
-            <div class="col-md-6 col-lg-4">
-                <div class="card gig-card h-100">
-                    <div class="card-body">
-                        <span class="badge badge-category mb-2">${gig.category || 'Umum'}</span>
-                        <h5 class="card-title">${gig.title}</h5>
-                        <p class="card-text">${gig.description.substring(0, 100)}${gig.description.length > 100 ? '...' : ''}</p>
-                        <h4 class="text-success">Rp ${formatNumber(gig.budget)}</h4>
-                        <span class="badge bg-${getStatusColor(gig.status)}">${getStatusText(gig.status)}</span>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <div class="btn-group w-100" role="group">
-                            <button class="btn btn-sm btn-primary" onclick="viewGigDetails(${gig.id})">
-                                <i class="bi bi-eye"></i> Detail
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteGig(${gig.id})">
-                                <i class="bi bi-trash"></i> Hapus
-                            </button>
+// ========================================
+// LOAD GIGS SAYA
+// ========================================
+function loadMyGigs() {
+    callAPI('gigs', 'GET')
+        .then(function(result) {
+            const myGigs = result.data.filter(function(gig) {
+                return gig.client_id == user.id;
+            });
+            
+            const container = document.getElementById('gigs-list');
+            
+            if (myGigs.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                            <h4 class="mt-3">Belum ada gig</h4>
+                            <p class="text-muted">Mulai posting gig pertama Anda!</p>
                         </div>
                     </div>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        showToast('Gagal memuat gigs: ' + error.message, 'danger');
-    }
-}
-
-// View Gig Details
-async function viewGigDetails(gigId) {
-    try {
-        const gigResult = await apiRequest(`gigs.php?id=${gigId}`);
-        const gig = gigResult.data;
-
-        const proposalsResult = await apiRequest(`proposals.php?gig_id=${gigId}`);
-        const proposals = proposalsResult.data;
-
-        document.getElementById('modal-gig-title').textContent = gig.title;
-        
-        document.getElementById('modal-gig-details').innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Kategori:</strong> ${gig.category}</p>
-                    <p><strong>Budget:</strong> <span class="text-success fw-bold">Rp ${formatNumber(gig.budget)}</span></p>
-                    <p><strong>Status:</strong> <span class="badge bg-${getStatusColor(gig.status)}">${getStatusText(gig.status)}</span></p>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Deadline:</strong> ${gig.deadline ? new Date(gig.deadline).toLocaleDateString('id-ID') : 'Tidak ada'}</p>
-                    <p><strong>Jumlah Proposal:</strong> ${gig.proposal_count}</p>
-                    <p><strong>Dibuat:</strong> ${new Date(gig.created_at).toLocaleDateString('id-ID')}</p>
-                </div>
-            </div>
-            <div class="mt-3">
-                <strong>Deskripsi:</strong>
-                <p class="mt-2">${gig.description}</p>
-            </div>
-        `;
-
-        document.getElementById('modal-proposals').innerHTML = `
-            <h5><i class="bi bi-file-earmark-text me-2"></i>Proposals (${proposals.length})</h5>
-            ${proposals.length === 0 ? '<p class="text-muted">Belum ada proposal</p>' : 
-                proposals.map(proposal => `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${proposal.freelancer_name}</h6>
-                                    <small class="text-muted">${proposal.freelancer_email}</small>
-                                </div>
-                                <h5 class="text-success mb-0">Rp ${formatNumber(proposal.bid_amount)}</h5>
-                            </div>
-                            <hr>
-                            <p><strong>Delivery:</strong> ${proposal.delivery_days} hari</p>
-                            <p><strong>Status:</strong> <span class="badge bg-${getProposalStatusColor(proposal.status)}">${proposal.status}</span></p>
-                            <details>
-                                <summary class="text-primary" style="cursor: pointer;">Lihat Cover Letter</summary>
-                                <p class="mt-2">${proposal.cover_letter}</p>
-                            </details>
-                            ${proposal.status === 'pending' ? `
-                                <div class="mt-3">
-                                    <button class="btn btn-success btn-sm me-2" onclick="acceptProposal(${proposal.id})">
-                                        <i class="bi bi-check-circle me-1"></i>Terima
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" onclick="rejectProposal(${proposal.id})">
-                                        <i class="bi bi-x-circle me-1"></i>Tolak
-                                    </button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `).join('')
+                `;
+                return;
             }
-        `;
-
-        const modal = new bootstrap.Modal(document.getElementById('gigModal'));
-        modal.show();
-    } catch (error) {
-        showToast('Gagal memuat detail: ' + error.message, 'danger');
-    }
+            
+            let html = '';
+            myGigs.forEach(function(gig) {
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card gig-card h-100">
+                            <div class="card-body">
+                                <span class="badge badge-category mb-2">${gig.category || 'Umum'}</span>
+                                <h5 class="card-title">${gig.title}</h5>
+                                <p class="card-text">${gig.description.substring(0, 100)}...</p>
+                                <h4 class="text-success">Rp ${formatRupiah(gig.budget)}</h4>
+                                <span class="badge bg-success">${gig.status}</span>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <button class="btn btn-sm btn-primary w-100" onclick="viewGig(${gig.id})">
+                                    <i class="bi bi-eye"></i> Lihat Detail
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
 }
 
-// Accept Proposal
-async function acceptProposal(proposalId) {
-    if (!confirm('Yakin ingin menerima proposal ini?')) return;
-
-    try {
-        await apiRequest(`proposals.php?id=${proposalId}`, 'PUT', { status: 'accepted' });
-        showToast('Proposal berhasil diterima!', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('gigModal')).hide();
-        loadMyGigs();
-    } catch (error) {
-        showToast('Gagal menerima proposal: ' + error.message, 'danger');
-    }
-}
-
-// Reject Proposal
-async function rejectProposal(proposalId) {
-    if (!confirm('Yakin ingin menolak proposal ini?')) return;
-
-    try {
-        await apiRequest(`proposals.php?id=${proposalId}`, 'PUT', { status: 'rejected' });
-        showToast('Proposal berhasil ditolak!', 'success');
-        bootstrap.Modal.getInstance(document.getElementById('gigModal')).hide();
-        loadMyGigs();
-    } catch (error) {
-        showToast('Gagal menolak proposal: ' + error.message, 'danger');
-    }
-}
-
-// Delete Gig
-async function deleteGig(gigId) {
-    if (!confirm('Yakin ingin menghapus gig ini?')) return;
-
-    try {
-        await apiRequest(`gigs.php?id=${gigId}`, 'DELETE');
-        showToast('Gig berhasil dihapus!', 'success');
-        loadMyGigs();
-    } catch (error) {
-        showToast('Gagal menghapus gig: ' + error.message, 'danger');
-    }
-}
-
-// Load Transactions
-async function loadTransactions() {
-    try {
-        const result = await apiRequest('transactions.php');
-        const transactions = result.data;
-
-        const container = document.getElementById('transactions-list');
-        
-        if (transactions.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-5">
-                    <i class="bi bi-cash-stack" style="font-size: 4rem; color: #ccc;"></i>
-                    <h4 class="mt-3">Belum ada transaksi</h4>
-                </div>
+// ========================================
+// LIHAT DETAIL GIG
+// ========================================
+function viewGig(gigId) {
+    callAPI('gigs/' + gigId, 'GET')
+        .then(function(result) {
+            const gig = result.data;
+            
+            document.getElementById('modal-gig-title').textContent = gig.title;
+            
+            document.getElementById('modal-gig-details').innerHTML = `
+                <p><strong>Kategori:</strong> ${gig.category}</p>
+                <p><strong>Budget:</strong> Rp ${formatRupiah(gig.budget)}</p>
+                <p><strong>Status:</strong> ${gig.status}</p>
+                <p><strong>Deskripsi:</strong></p>
+                <p>${gig.description}</p>
             `;
-            return;
-        }
-
-        container.innerHTML = `
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Gig</th>
-                            <th>Freelancer</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Tanggal</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${transactions.map(trans => `
-                            <tr>
-                                <td>${trans.gig_title}</td>
-                                <td>${trans.freelancer_name}</td>
-                                <td class="text-success fw-bold">Rp ${formatNumber(trans.amount)}</td>
-                                <td><span class="badge bg-${getTransactionStatusColor(trans.status)}">${trans.status}</span></td>
-                                <td>${new Date(trans.created_at).toLocaleDateString('id-ID')}</td>
-                                <td>
-                                    ${trans.status === 'pending' ? `
-                                        <button class="btn btn-sm btn-success" onclick="markAsPaid(${trans.id})">
-                                            <i class="bi bi-check-circle me-1"></i>Bayar
-                                        </button>
-                                    ` : '-'}
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-        `;
-    } catch (error) {
-        showToast('Gagal memuat transaksi: ' + error.message, 'danger');
-    }
+            
+            // Load proposals untuk gig ini
+            return callAPI('proposals?gig_id=' + gigId, 'GET');
+        })
+        .then(function(result) {
+            const proposals = result.data;
+            
+            let html = '<h5>Proposals (' + proposals.length + ')</h5>';
+            
+            if (proposals.length === 0) {
+                html += '<p class="text-muted">Belum ada proposal</p>';
+            } else {
+                proposals.forEach(function(proposal) {
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6>${proposal.freelancer_name}</h6>
+                                <p>Tawaran: Rp ${formatRupiah(proposal.bid_amount)}</p>
+                                <p>Estimasi: ${proposal.delivery_days} hari</p>
+                                <p>Status: ${proposal.status}</p>
+                                <details>
+                                    <summary>Lihat Cover Letter</summary>
+                                    <p class="mt-2">${proposal.cover_letter}</p>
+                                </details>
+                                ${proposal.status === 'pending' ? `
+                                    <button class="btn btn-success btn-sm mt-2" onclick="acceptProposal(${proposal.id})">Terima</button>
+                                    <button class="btn btn-danger btn-sm mt-2" onclick="rejectProposal(${proposal.id})">Tolak</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            document.getElementById('modal-proposals').innerHTML = html;
+            
+            // Tampilkan modal
+            const modal = new bootstrap.Modal(document.getElementById('gigModal'));
+            modal.show();
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
 }
 
-// Mark as Paid
-async function markAsPaid(transactionId) {
-    if (!confirm('Konfirmasi bahwa pembayaran sudah dilakukan?')) return;
-
-    try {
-        await apiRequest(`transactions.php?id=${transactionId}`, 'PUT', { status: 'paid' });
-        showToast('Transaksi berhasil ditandai sebagai dibayar!', 'success');
-        loadTransactions();
-    } catch (error) {
-        showToast('Gagal update transaksi: ' + error.message, 'danger');
+// ========================================
+// TERIMA PROPOSAL
+// ========================================
+function acceptProposal(proposalId) {
+    if (!confirm('Yakin ingin menerima proposal ini?')) {
+        return;
     }
+    
+    callAPI('proposals/' + proposalId, 'PUT', { status: 'accepted' })
+        .then(function(result) {
+            showMessage('Proposal berhasil diterima!', 'success');
+            
+            // Tutup modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('gigModal'));
+            modal.hide();
+            
+            // Reload gigs
+            loadMyGigs();
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
 }
 
-// Load Profile
-async function loadProfile() {
-    try {
-        const result = await apiRequest('auth.php?action=profile');
-        const profile = result.data;
-
-        document.getElementById('profile-name').value = profile.name || '';
-        document.getElementById('profile-email').value = profile.email || '';
-        document.getElementById('profile-phone').value = profile.phone || '';
-        document.getElementById('profile-bio').value = profile.bio || '';
-    } catch (error) {
-        showToast('Gagal memuat profil: ' + error.message, 'danger');
+// ========================================
+// TOLAK PROPOSAL
+// ========================================
+function rejectProposal(proposalId) {
+    if (!confirm('Yakin ingin menolak proposal ini?')) {
+        return;
     }
+    
+    callAPI('proposals/' + proposalId, 'PUT', { status: 'rejected' })
+        .then(function(result) {
+            showMessage('Proposal berhasil ditolak!', 'success');
+            
+            // Tutup modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('gigModal'));
+            modal.hide();
+            
+            // Reload gigs
+            loadMyGigs();
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
 }
 
-// Update Profile
-document.getElementById('form-profile').addEventListener('submit', async (e) => {
+// ========================================
+// LOAD TRANSAKSI
+// ========================================
+function loadTransactions() {
+    callAPI('transactions', 'GET')
+        .then(function(result) {
+            const transactions = result.data;
+            const container = document.getElementById('transactions-list');
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<p class="text-center py-5">Belum ada transaksi</p>';
+                return;
+            }
+            
+            let html = '<table class="table"><thead><tr><th>Gig</th><th>Freelancer</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+            
+            transactions.forEach(function(trans) {
+                html += `
+                    <tr>
+                        <td>${trans.gig_title}</td>
+                        <td>${trans.freelancer_name}</td>
+                        <td>Rp ${formatRupiah(trans.amount)}</td>
+                        <td>${trans.status}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
+}
+
+// ========================================
+// LOAD PROFILE
+// ========================================
+function loadProfile() {
+    callAPI('auth/profile', 'GET')
+        .then(function(result) {
+            const profile = result.data;
+            
+            document.getElementById('profile-name').value = profile.name || '';
+            document.getElementById('profile-email').value = profile.email || '';
+            document.getElementById('profile-phone').value = profile.phone || '';
+            document.getElementById('profile-bio').value = profile.bio || '';
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
+}
+
+// ========================================
+// UPDATE PROFILE
+// ========================================
+document.getElementById('form-profile').onsubmit = function(e) {
     e.preventDefault();
-
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-
+    
+    const name = document.getElementById('profile-name').value;
+    const phone = document.getElementById('profile-phone').value;
+    const bio = document.getElementById('profile-bio').value;
+    
     const profileData = {
-        name: document.getElementById('profile-name').value,
-        phone: document.getElementById('profile-phone').value,
-        bio: document.getElementById('profile-bio').value
+        name: name,
+        phone: phone,
+        bio: bio
     };
+    
+    callAPI('auth/profile', 'PUT', profileData)
+        .then(function(result) {
+            showMessage('Profil berhasil diupdate!', 'success');
+            
+            // Update nama di navbar
+            user.name = name;
+            localStorage.setItem('user', JSON.stringify(user));
+            document.getElementById('user-name').textContent = 'Halo, ' + name;
+        })
+        .catch(function(error) {
+            console.error(error);
+        });
+};
 
-    try {
-        await apiRequest('auth.php?action=profile', 'PUT', profileData);
-        showToast('Profil berhasil diupdate!', 'success');
-        
-        user.name = profileData.name;
-        localStorage.setItem('user', JSON.stringify(user));
-        document.getElementById('user-name').textContent = `Halo, ${user.name}`;
-    } catch (error) {
-        showToast('Gagal update profil: ' + error.message, 'danger');
-    } finally {
-        submitBtn.disabled = false;
-    }
-});
-
-// Utility Functions
-function formatNumber(num) {
-    return new Intl.NumberFormat('id-ID').format(num);
-}
-
-function getStatusText(status) {
-    const map = {
-        'open': 'Terbuka',
-        'in_progress': 'Sedang Berjalan',
-        'completed': 'Selesai',
-        'cancelled': 'Dibatalkan'
-    };
-    return map[status] || status;
-}
-
-function getStatusColor(status) {
-    const map = {
-        'open': 'success',
-        'in_progress': 'warning',
-        'completed': 'info',
-        'cancelled': 'danger'
-    };
-    return map[status] || 'secondary';
-}
-
-function getProposalStatusColor(status) {
-    const map = {
-        'pending': 'warning',
-        'accepted': 'success',
-        'rejected': 'danger'
-    };
-    return map[status] || 'secondary';
-}
-
-function getTransactionStatusColor(status) {
-    const map = {
-        'pending': 'warning',
-        'paid': 'info',
-        'completed': 'success',
-        'cancelled': 'danger'
-    };
-    return map[status] || 'secondary';
-}
-
-// Initial load
+// ========================================
+// LOAD DATA PERTAMA KALI
+// ========================================
 loadMyGigs();

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -10,7 +11,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ===== SERVE FRONTEND STATIC FILES =====
+// Ini yang membuat http://localhost:3000 langsung ke frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+// ===== API ROUTES =====
 const authRoutes = require('./routes/auth');
 const gigsRoutes = require('./routes/gigs');
 const proposalsRoutes = require('./routes/proposals');
@@ -21,30 +26,26 @@ app.use('/api/gigs', gigsRoutes);
 app.use('/api/proposals', proposalsRoutes);
 app.use('/api/transactions', transactionsRoutes);
 
-// Root endpoint
+// ===== ROOT ENDPOINT (/) =====
+// Saat user buka http://localhost:3000
 app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'FreelanceHub API is running!',
-        version: '1.0.0',
-        endpoints: {
-            auth: '/api/auth',
-            gigs: '/api/gigs',
-            proposals: '/api/proposals',
-            transactions: '/api/transactions'
-        }
-    });
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// 404 handler
-app.use((req, res) => {
+// ===== 404 HANDLER FOR API =====
+app.use('/api/*', (req, res) => {
     res.status(404).json({
         success: false,
         message: 'Endpoint tidak ditemukan'
     });
 });
 
-// Error handler
+// ===== CATCH ALL (untuk SPA routing) =====
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// ===== ERROR HANDLER =====
 app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({
@@ -53,14 +54,15 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
+// ===== START SERVER =====
 app.listen(PORT, () => {
     console.log(`
 ╔════════════════════════════════════════╗
-║   🚀 FreelanceHub API Server          ║
-║   ✅ Server running on port ${PORT}       ║
-║   📍 http://localhost:${PORT}             ║
-║   🔗 API: http://localhost:${PORT}/api   ║
+║   🚀 FreelanceHub Server              ║
+║   ✅ Running on port ${PORT}              ║
+║                                        ║
+║   🌐 Open: http://localhost:${PORT}      ║
+║   🔗 API:  http://localhost:${PORT}/api  ║
 ╚════════════════════════════════════════╝
     `);
 });
