@@ -92,7 +92,7 @@ function showToast(message, type = 'success') {
 // Load Available Gigs
 async function loadAvailableGigs(category = '') {
     try {
-        let url = 'gigs.php?status=open';
+        let url = 'gigs?status=open';
         if (category) {
             url += `&category=${encodeURIComponent(category)}`;
         }
@@ -179,7 +179,7 @@ document.getElementById('form-apply').addEventListener('submit', async (e) => {
     };
 
     try {
-        await apiRequest('proposals.php', 'POST', proposalData);
+        await apiRequest('proposals', 'POST', proposalData);
         showToast('Proposal berhasil dikirim!', 'success');
         bootstrap.Modal.getInstance(document.getElementById('applyModal')).hide();
         e.target.reset();
@@ -194,7 +194,7 @@ document.getElementById('form-apply').addEventListener('submit', async (e) => {
 // Load My Proposals
 async function loadMyProposals() {
     try {
-        const result = await apiRequest('proposals.php');
+        const result = await apiRequest('proposals');
         const proposals = result.data;
 
         const container = document.getElementById('proposals-list');
@@ -270,7 +270,7 @@ async function deleteProposal(proposalId) {
     if (!confirm('Yakin ingin membatalkan proposal ini?')) return;
 
     try {
-        await apiRequest(`proposals.php?id=${proposalId}`, 'DELETE');
+        await apiRequest(`proposals/${proposalId}`, 'DELETE');
         showToast('Proposal berhasil dibatalkan!', 'success');
         loadMyProposals();
     } catch (error) {
@@ -281,7 +281,7 @@ async function deleteProposal(proposalId) {
 // Load My Projects
 async function loadMyProjects() {
     try {
-        const result = await apiRequest('transactions.php');
+        const result = await apiRequest('transactions');
         const projects = result.data;
 
         const container = document.getElementById('projects-list');
@@ -344,7 +344,7 @@ async function markAsCompleted(transactionId) {
     if (!confirm('Konfirmasi bahwa project sudah selesai dikerjakan?')) return;
 
     try {
-        await apiRequest(`transactions.php?id=${transactionId}`, 'PUT', { status: 'completed' });
+        await apiRequest(`transactions/${transactionId}`, 'PUT', { status: 'completed' });
         showToast('Project berhasil ditandai sebagai selesai!', 'success');
         loadMyProjects();
     } catch (error) {
@@ -355,7 +355,7 @@ async function markAsCompleted(transactionId) {
 // Load Profile
 async function loadProfile() {
     try {
-        const result = await apiRequest('auth.php?action=profile');
+        const result = await apiRequest('auth/profile');
         const profile = result.data;
 
         document.getElementById('profile-name').value = profile.name || '';
@@ -381,7 +381,7 @@ document.getElementById('form-profile').addEventListener('submit', async (e) => 
     };
 
     try {
-        await apiRequest('auth.php?action=profile', 'PUT', profileData);
+        await apiRequest('auth/profile', 'PUT', profileData);
         showToast('Profil berhasil diupdate!', 'success');
         
         user.name = profileData.name;

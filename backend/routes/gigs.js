@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../config/database');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
+
 // ENDPOINT 5: Create Gig (Client only)
 router.post('/', verifyToken, requireRole(['client']), async (req, res) => {
     try {
@@ -35,21 +36,30 @@ router.post('/', verifyToken, requireRole(['client']), async (req, res) => {
     }
 });
 
-// ENDPOINT 6: Get All Gigs
+
+// ENDPOINT 6: Get All Gigs (FIXED - Return ALL gigs dengan client_id)
 router.get('/', async (req, res) => {
     try {
-        const { status = 'open', category } = req.query;
+        const { status, category } = req.query;
 
         let query = `
-            SELECT g.*, u.name as client_name, u.email as client_email 
+            SELECT g.id, g.client_id, g.title, g.description, g.category, g.budget, 
+                   g.deadline, g.status, g.created_at, u.name as client_name, 
+                   u.email as client_email 
             FROM gigs g 
-            JOIN users u ON g.client_id = u.id 
-            WHERE g.status = ?
+            JOIN users u ON g.client_id = u.id
         `;
-        const params = [status];
+        const params = [];
 
+        // Only filter by status if provided
+        if (status) {
+            query += ' WHERE g.status = ?';
+            params.push(status);
+        }
+
+        // Filter by category if provided
         if (category) {
-            query += ' AND g.category = ?';
+            query += params.length > 0 ? ' AND g.category = ?' : ' WHERE g.category = ?';
             params.push(category);
         }
 
@@ -72,13 +82,16 @@ router.get('/', async (req, res) => {
     }
 });
 
+
 // ENDPOINT 7: Get Gig by ID
 router.get('/:id', async (req, res) => {
     try {
         const { id } = req.params;
 
         const [gigs] = await db.query(
-            `SELECT g.*, u.name as client_name, u.email as client_email, u.phone as client_phone 
+            `SELECT g.id, g.client_id, g.title, g.description, g.category, g.budget, 
+                    g.deadline, g.status, g.created_at, u.name as client_name, 
+                    u.email as client_email, u.phone as client_phone 
              FROM gigs g 
              JOIN users u ON g.client_id = u.id 
              WHERE g.id = ?`,
@@ -92,14 +105,14 @@ router.get('/:id', async (req, res) => {
             });
         }
 
-        const gig = gigs[0];
+        const gig = gigs;
 
         // Get proposal count
         const [countResult] = await db.query(
             'SELECT COUNT(*) as proposal_count FROM proposals WHERE gig_id = ?',
             [id]
         );
-        gig.proposal_count = countResult[0].proposal_count;
+        gig.proposal_count = countResult.proposal_count;
 
         res.json({
             success: true,
@@ -115,6 +128,7 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
+
 
 // ENDPOINT 8: Update Gig (Owner only)
 router.put('/:id', verifyToken, requireRole(['client']), async (req, res) => {
@@ -135,7 +149,7 @@ router.put('/:id', verifyToken, requireRole(['client']), async (req, res) => {
             });
         }
 
-        if (gigs[0].client_id !== req.user.user_id) {
+        if (gigs.client_id !== req.user.user_id) {
             return res.status(403).json({
                 success: false,
                 message: 'Anda tidak memiliki akses untuk mengupdate gig ini'
@@ -168,6 +182,7 @@ router.put('/:id', verifyToken, requireRole(['client']), async (req, res) => {
     }
 });
 
+
 // ENDPOINT 9: Delete Gig (Owner only)
 router.delete('/:id', verifyToken, requireRole(['client']), async (req, res) => {
     try {
@@ -186,7 +201,7 @@ router.delete('/:id', verifyToken, requireRole(['client']), async (req, res) => 
             });
         }
 
-        if (gigs[0].client_id !== req.user.user_id) {
+        if (gigs.client_id !== req.user.user_id) {
             return res.status(403).json({
                 success: false,
                 message: 'Anda tidak memiliki akses untuk menghapus gig ini'
@@ -208,5 +223,6 @@ router.delete('/:id', verifyToken, requireRole(['client']), async (req, res) => 
         });
     }
 });
+
 
 module.exports = router;

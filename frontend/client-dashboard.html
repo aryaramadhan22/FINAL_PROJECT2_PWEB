@@ -201,17 +201,135 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modal-gig-title"></h5>
+                    <h5 class="modal-title">Detail Gig</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
+                
                 <div class="modal-body">
+                    <!-- HARUS ADA: Hidden input untuk gig ID -->
+                    <input type="hidden" id="modal-gig-id">
+                    
+                    <!-- Gig details (sudah ada kah?) -->
+                    <h5 id="modal-gig-title"></h5>
                     <div id="modal-gig-details"></div>
+                    
                     <hr>
-                    <div id="modal-proposals"></div>
+                    
+                    <!-- PENTING: Container untuk proposals list -->
+                    <h6>Proposals</h6>
+                    <div id="modal-proposals">
+                        <p class="text-muted">Loading...</p>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal untuk edit gig -->
+    <div class="modal fade" id="editGigModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Gig</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-edit-gig">
+                        <input type="hidden" id="edit-gig-id">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Judul Gig</label>
+                            <input type="text" class="form-control" id="edit-gig-title" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Deskripsi</label>
+                            <textarea class="form-control" id="edit-gig-description" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Kategori</label>
+                            <select class="form-select" id="edit-gig-category" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="Web Development">Web Development</option>
+                                <option value="Mobile App">Mobile App</option>
+                                <option value="Design">Design</option>
+                                <option value="Writing">Writing</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Budget (Rp)</label>
+                            <input type="number" class="form-control" id="edit-gig-budget" required min="0">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Deadline (Opsional)</label>
+                            <input type="date" class="form-control" id="edit-gig-deadline">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-2"></i>Simpan Perubahan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL GIG -->
+    <div class="modal fade" id="gigModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detail Gig</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="hidden" id="modal-gig-id">
+                    
+                    <!-- GIG DETAILS -->
+                    <h5 id="modal-gig-title" class="mb-3">-</h5>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Kategori:</strong> <span id="modal-gig-category">-</span></p>
+                            <p class="mb-1"><strong>Budget:</strong> <span id="modal-gig-budget" class="text-success">-</span></p>
+                            <p class="mb-1"><strong>Status:</strong> <span id="modal-gig-status">-</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Deadline:</strong> <span id="modal-gig-deadline">-</span></p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Deskripsi</h6>
+                    <p id="modal-gig-description" class="text-muted">-</p>
+                    
+                    <hr>
+                    
+                    <!-- PROPOSALS LIST -->
+                    <h6 class="mb-3">Proposals</h6>
+                    <div id="modal-proposals">
+                        <p class="text-muted">Loading...</p>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
