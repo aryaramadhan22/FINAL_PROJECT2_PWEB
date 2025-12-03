@@ -201,7 +201,7 @@ router.delete('/:id', verifyToken, requireRole(['client']), async (req, res) => 
             });
         }
 
-        if (gigs.client_id !== req.user.user_id) {
+        if (gigs[0].client_id !== req.user.user_id) {
             return res.status(403).json({
                 success: false,
                 message: 'Anda tidak memiliki akses untuk menghapus gig ini'
