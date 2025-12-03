@@ -211,6 +211,69 @@
         </div>
     </div>
 
+    <!-- Complete Project Modal -->
+<!-- Letakkan setelah Modal applyModal, sebelum script bootstrap -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-check-circle me-2"></i>Selesaikan Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="form-complete">
+                <div class="modal-body">
+                    <input type="hidden" id="complete-transaction-id">
+                    
+                    <div class="alert alert-info">
+                        <strong>Project:</strong> <span id="complete-gig-title"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-file-text me-1"></i>Catatan Pengiriman
+                        </label>
+                        <textarea 
+                            class="form-control" 
+                            id="delivery-note" 
+                            rows="4" 
+                            placeholder="Jelaskan hasil pekerjaan Anda (opsional)"
+                        ></textarea>
+                        <small class="text-muted">Contoh: Project selesai tepat waktu, semua fitur berfungsi dengan baik</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-link-45deg me-1"></i>Link/File Hasil Kerja
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="delivery-file-info"
+                            placeholder="Masukkan link Google Drive, Dropbox, GitHub, dll (opsional)"
+                        >
+                        <small class="text-muted">Upload file hasil kerja ke cloud storage dan paste linknya di sini</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Perhatian:</strong> Setelah submit, project akan ditandai selesai dan tidak bisa diubah lagi.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-2"></i>Submit & Tandai Selesai
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/freelancer.js"></script>

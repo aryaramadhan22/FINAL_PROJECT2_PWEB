@@ -1,5 +1,5 @@
 // API URL - sesuaikan dengan URL backend Express Anda
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:4000/api';
 
 // Show Alert
 function showAlert(message, type = 'danger') {
