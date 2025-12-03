@@ -140,13 +140,13 @@ async function loadAvailableGigs(category = '') {
 }
 
 // Filter Gigs
-function filterGigs() {
+window.filterGigs = function() {
     const category = document.getElementById('filter-category').value;
     loadAvailableGigs(category);
-}
+};
 
 // Show Apply Modal
-function showApplyModal(gigId, gigTitle, budget) {
+window.showApplyModal = function(gigId, gigTitle, budget) {
     document.getElementById('modal-gig-title').textContent = gigTitle;
     document.getElementById('modal-gig-info').innerHTML = `
         <div class="alert alert-info">
@@ -161,7 +161,7 @@ function showApplyModal(gigId, gigTitle, budget) {
     
     const modal = new bootstrap.Modal(document.getElementById('applyModal'));
     modal.show();
-}
+};
 
 // Submit Proposal
 document.getElementById('form-apply').addEventListener('submit', async (e) => {
@@ -180,7 +180,7 @@ document.getElementById('form-apply').addEventListener('submit', async (e) => {
 
     try {
         await apiRequest('proposals', 'POST', proposalData);
-        showToast('Proposal berhasil dikirim!', 'success');
+        showToast('✅ Proposal berhasil dikirim!', 'success');
         bootstrap.Modal.getInstance(document.getElementById('applyModal')).hide();
         e.target.reset();
     } catch (error) {
@@ -256,6 +256,11 @@ async function loadMyProposals() {
                         <button class="btn btn-danger btn-sm mt-3" onclick="deleteProposal(${proposal.id})">
                             <i class="bi bi-trash me-1"></i>Batalkan Proposal
                         </button>
+                    ` : proposal.status === 'accepted' ? `
+                        <div class="alert alert-success mt-3 mb-0">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Proposal diterima!</strong> Cek menu <strong>Project Saya</strong> untuk mulai mengerjakan.
+                        </div>
                     ` : ''}
                 </div>
             </div>
@@ -266,7 +271,7 @@ async function loadMyProposals() {
 }
 
 // Delete Proposal
-async function deleteProposal(proposalId) {
+window.deleteProposal = async function(proposalId) {
     if (!confirm('Yakin ingin membatalkan proposal ini?')) return;
 
     try {
@@ -276,9 +281,11 @@ async function deleteProposal(proposalId) {
     } catch (error) {
         showToast('Gagal membatalkan proposal: ' + error.message, 'danger');
     }
-}
+};
 
-// Load My Projects
+// ========================================
+// LOAD MY PROJECTS (ENHANCED!)
+// ========================================
 async function loadMyProjects() {
     try {
         const result = await apiRequest('transactions');
@@ -300,7 +307,7 @@ async function loadMyProjects() {
         container.innerHTML = `
             <div class="table-responsive">
                 <table class="table table-hover">
-                    <thead>
+                    <thead class="table-light">
                         <tr>
                             <th>Project</th>
                             <th>Client</th>
@@ -311,27 +318,60 @@ async function loadMyProjects() {
                         </tr>
                     </thead>
                     <tbody>
-                        ${projects.map(project => `
-                            <tr>
-                                <td>${project.gig_title}</td>
-                                <td>${project.client_name}</td>
-                                <td class="text-success fw-bold">Rp ${formatNumber(project.amount)}</td>
-                                <td><span class="badge bg-${getTransactionStatusColor(project.status)}">${getTransactionStatusText(project.status)}</span></td>
-                                <td>
-                                    ${new Date(project.created_at).toLocaleDateString('id-ID')}
-                                    ${project.completion_date ? `<br><small>Selesai: ${new Date(project.completion_date).toLocaleDateString('id-ID')}</small>` : ''}
-                                </td>
-                                <td>
-                                    ${project.status === 'paid' ? `
-                                        <button class="btn btn-sm btn-success" onclick="markAsCompleted(${project.id})">
-                                            <i class="bi bi-check-circle me-1"></i>Selesai
-                                        </button>
-                                    ` : '-'}
-                                </td>
-                            </tr>
-                        `).join('')}
+                        ${projects.map(project => {
+                            const completionDate = project.completion_date 
+                                ? `<br><small class="text-success">✅ Selesai: ${new Date(project.completion_date).toLocaleDateString('id-ID')}</small>` 
+                                : '';
+                            const paymentDate = project.payment_date 
+                                ? `<br><small class="text-info">💰 Dibayar: ${new Date(project.payment_date).toLocaleDateString('id-ID')}</small>` 
+                                : '';
+                            
+                            return `
+                                <tr>
+                                    <td>
+                                        <strong>${project.gig_title}</strong>
+                                    </td>
+                                    <td>${project.client_name || '-'}</td>
+                                    <td class="text-success fw-bold">Rp ${formatNumber(project.amount)}</td>
+                                    <td>
+                                        <span class="badge bg-${getTransactionStatusColor(project.status)}">
+                                            ${getTransactionStatusText(project.status)}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>${new Date(project.created_at).toLocaleDateString('id-ID')}</small>
+                                        ${paymentDate}
+                                        ${completionDate}
+                                    </td>
+                                    <td>
+                                        ${project.status === 'paid' ? `
+                                            <button class="btn btn-success btn-sm" onclick="showCompleteModal(${project.id}, '${escapeHtml(project.gig_title)}')">
+                                                <i class="bi bi-check-circle me-1"></i>Selesai & Upload
+                                            </button>
+                                        ` : project.status === 'pending' ? `
+                                            <span class="text-warning">
+                                                <i class="bi bi-hourglass-split me-1"></i>Menunggu pembayaran
+                                            </span>
+                                        ` : project.status === 'completed' ? `
+                                            <span class="text-success">
+                                                <i class="bi bi-check-circle me-1"></i>Selesai
+                                            </span>
+                                        ` : '-'}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
+            </div>
+            
+            <div class="alert alert-info mt-3">
+                <h6><i class="bi bi-info-circle me-2"></i>Status Project:</h6>
+                <ul class="mb-0">
+                    <li><strong>Menunggu Pembayaran:</strong> Client belum membayar</li>
+                    <li><strong>Sudah Dibayar:</strong> Mulai kerjakan project! Klik "Selesai & Upload" setelah selesai</li>
+                    <li><strong>Selesai:</strong> Project sudah diselesaikan</li>
+                </ul>
             </div>
         `;
     } catch (error) {
@@ -339,17 +379,64 @@ async function loadMyProjects() {
     }
 }
 
-// Mark as Completed
-async function markAsCompleted(transactionId) {
-    if (!confirm('Konfirmasi bahwa project sudah selesai dikerjakan?')) return;
-
-    try {
-        await apiRequest(`transactions/${transactionId}`, 'PUT', { status: 'completed' });
-        showToast('Project berhasil ditandai sebagai selesai!', 'success');
-        loadMyProjects();
-    } catch (error) {
-        showToast('Gagal update project: ' + error.message, 'danger');
+// ========================================
+// SHOW COMPLETE MODAL (Upload hasil kerja)
+// ========================================
+window.showCompleteModal = function(transactionId, gigTitle) {
+    console.log('Show complete modal:', transactionId, gigTitle);
+    
+    const modalEl = document.getElementById('completeModal');
+    if (!modalEl) {
+        console.error('Modal #completeModal tidak ditemukan!');
+        showToast('Error: Modal tidak ditemukan', 'danger');
+        return;
     }
+    
+    document.getElementById('complete-transaction-id').value = transactionId;
+    document.getElementById('complete-gig-title').textContent = gigTitle;
+    document.getElementById('delivery-note').value = '';
+    document.getElementById('delivery-file-info').value = '';
+    
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+};
+
+// ========================================
+// SUBMIT COMPLETION
+// ========================================
+if (document.getElementById('form-complete')) {
+    document.getElementById('form-complete').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+
+        const transactionId = document.getElementById('complete-transaction-id').value;
+        const deliveryNote = document.getElementById('delivery-note').value;
+        const deliveryFileInfo = document.getElementById('delivery-file-info').value;
+
+        const completionData = {
+            status: 'completed',
+            delivery_note: deliveryNote,
+            delivery_file: deliveryFileInfo || null
+        };
+
+        try {
+            await apiRequest(`transactions/${transactionId}`, 'PUT', completionData);
+            showToast('🎉 Project berhasil ditandai selesai!', 'success');
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('completeModal'));
+            if (modal) modal.hide();
+            
+            loadMyProjects();
+        } catch (error) {
+            showToast('Gagal menandai selesai: ' + error.message, 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Submit & Tandai Selesai';
+        }
+    });
 }
 
 // Load Profile
@@ -382,7 +469,7 @@ document.getElementById('form-profile').addEventListener('submit', async (e) => 
 
     try {
         await apiRequest('auth/profile', 'PUT', profileData);
-        showToast('Profil berhasil diupdate!', 'success');
+        showToast('✅ Profil berhasil diupdate!', 'success');
         
         user.name = profileData.name;
         localStorage.setItem('user', JSON.stringify(user));
@@ -394,16 +481,19 @@ document.getElementById('form-profile').addEventListener('submit', async (e) => 
     }
 });
 
-// Utility Functions
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
 function formatNumber(num) {
+    if (!num && num !== 0) return '0';
     return new Intl.NumberFormat('id-ID').format(num);
 }
 
 function getProposalStatusText(status) {
     const map = {
-        'pending': 'Menunggu',
-        'accepted': 'Diterima',
-        'rejected': 'Ditolak'
+        'pending': 'Menunggu ⏳',
+        'accepted': 'Diterima ✅',
+        'rejected': 'Ditolak ❌'
     };
     return map[status] || status;
 }
@@ -420,8 +510,8 @@ function getProposalStatusColor(status) {
 function getTransactionStatusText(status) {
     const map = {
         'pending': 'Menunggu Pembayaran',
-        'paid': 'Sudah Dibayar',
-        'completed': 'Selesai',
+        'paid': 'Sudah Dibayar - Kerjakan!',
+        'completed': 'Selesai ✅',
         'cancelled': 'Dibatalkan'
     };
     return map[status] || status;
@@ -438,7 +528,10 @@ function getTransactionStatusColor(status) {
 }
 
 function escapeHtml(text) {
-    return text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
 // Initial load
