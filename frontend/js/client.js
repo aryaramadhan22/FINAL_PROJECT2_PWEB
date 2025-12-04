@@ -88,7 +88,7 @@ document.getElementById('form-create-gig').addEventListener('submit', async e =>
     
     try {
         await apiRequest('gigs', 'POST', gigData);
-        showToast('✅ Gig berhasil dibuat!', 'success');
+        showToast('Gig berhasil dibuat!', 'success');
         e.target.reset();
         document.querySelector('[data-section="my-gigs"]').click();
     } catch (error) {
@@ -184,8 +184,8 @@ window.viewGigDetail = async function(gigId) {
             proposals.forEach(proposal => {
                 const statusClass = proposal.status === 'accepted' ? 'success' : 
                                   proposal.status === 'rejected' ? 'danger' : 'warning';
-                const statusText = proposal.status === 'accepted' ? 'Diterima ✅' : 
-                                 proposal.status === 'rejected' ? 'Ditolak ❌' : 'Menunggu ⏳';
+                const statusText = proposal.status === 'accepted' ? 'Diterima ' : 
+                                 proposal.status === 'rejected' ? 'Ditolak ' : 'Menunggu ';
                 
                 html += `
                     <div class="card mb-3 ${proposal.status === 'accepted' ? 'border-success' : ''}">
@@ -249,7 +249,7 @@ window.acceptProposal = async function(proposalId) {
     
     try {
         await apiRequest(`proposals/${proposalId}`, 'PUT', { status: 'accepted' });
-        showToast('✅ Proposal berhasil diterima!\n💰 Transaction telah dibuat. Silakan bayar di menu Transaksi.', 'success');
+        showToast('Proposal berhasil diterima!\nTransaction telah dibuat. Silakan bayar di menu Transaksi.', 'success');
         bootstrap.Modal.getInstance(document.getElementById('gigModal')).hide();
         loadMyGigs();
     } catch (error) {
@@ -271,7 +271,7 @@ window.rejectProposal = async function(proposalId) {
 };
 
 window.deleteGig = async function(gigId) {
-    if (!confirm('Yakin ingin menghapus gig ini?\n\n⚠️ Semua proposal terkait akan ikut terhapus!')) return;
+    if (!confirm('Yakin ingin menghapus gig ini?\n\nSemua proposal terkait akan ikut terhapus!')) return;
     
     try {
         await apiRequest(`gigs/${gigId}`, 'DELETE');

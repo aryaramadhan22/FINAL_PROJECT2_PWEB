@@ -1,3 +1,5 @@
+
+//api dan konfigurasi
 const API_URL = 'http://localhost:4000/api';
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -48,7 +50,7 @@ async function apiRequest(endpoint, method = 'GET', body = null) {
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
-    toast.style.zIndex = '9999';
+    toast.style.zIndex = '9999';    
     toast.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
@@ -299,7 +301,7 @@ window.showCompleteModal = function(transactionId, gigTitle) {
     new bootstrap.Modal(document.getElementById('completeModal')).show();
 };
 
-if (document.getElementById('form-complete')) {
+if (document.getElementById('form-complete')) { 
     document.getElementById('form-complete').addEventListener('submit', async e => {
         e.preventDefault();
         const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -313,7 +315,7 @@ if (document.getElementById('form-complete')) {
         };
         try {
             await apiRequest(`transactions/${transactionId}`, 'PUT', completionData);
-            showToast('🎉 Project berhasil ditandai selesai!', 'success');
+            showToast('Project berhasil ditandai selesai!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('completeModal')).hide();
             loadMyProjects();
         } catch (error) {

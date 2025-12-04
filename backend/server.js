@@ -57,12 +57,11 @@ app.use((err, req, res, next) => {
 // ===== START SERVER =====
 app.listen(PORT, () => {
     console.log(`
-╔════════════════════════════════════════╗
-║   🚀 FreelanceHub Server              ║
-║   ✅ Running on port ${PORT}              ║
-║                                        ║
-║   🌐 Open: http://localhost:${PORT}      ║
-║   🔗 API:  http://localhost:${PORT}/api  ║
-╚════════════════════════════════════════╝
+
+   🚀 FreelanceHub Server             
+   ✅ Running on port ${PORT}              
+   🌐 Open: http://localhost:${PORT}      
+   🔗 API:  http://localhost:${PORT}/api
+
     `);
 });
