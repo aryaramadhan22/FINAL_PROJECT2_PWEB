@@ -38,41 +38,44 @@ Platform web marketplace freelance yang menghubungkan **Client** dengan **Freela
 
 ## 📁 Struktur Project
 
+```
 FreelanceHub/
 ├── backend/
-│ ├── config/
-│ │ └── database.js # Konfigurasi koneksi MySQL
-│ ├── middleware/
-│ │ └── auth.js # JWT verification middleware
-│ ├── routes/
-│ │ ├── auth.js # Endpoint register, login, profile
-│ │ ├── gigs.js # CRUD gigs
-│ │ ├── proposals.js # CRUD proposals
-│ │ └── transactions.js # Kelola transaksi
-│ ├── .env # Environment variables
-│ ├── package.json
-│ └── server.js # Entry point
+│   ├── config/
+│   │   └── database.js          # Konfigurasi koneksi MySQL
+│   ├── middleware/
+│   │   └── auth.js              # JWT verification middleware
+│   ├── routes/
+│   │   ├── auth.js              # Endpoint register, login, profile
+│   │   ├── gigs.js              # CRUD gigs
+│   │   ├── proposals.js         # CRUD proposals
+│   │   └── transactions.js      # Kelola transaksi
+│   ├── .env                     # Environment variables
+│   ├── package.json
+│   └── server.js                # Entry point
 ├── frontend/
-│ ├── js/
-│ │ ├── auth.js # Login/register logic
-│ │ ├── client.js # Client dashboard logic
-│ │ └── freelancer.js # Freelancer dashboard logic
-│ ├── index.html # Homepage & auth
-│ ├── client-dashboard.html
-│ └── freelancer-dashboard.html
+│   ├── js/
+│   │   ├── auth.js              # Login/register logic
+│   │   ├── client.js            # Client dashboard logic
+│   │   └── freelancer.js        # Freelancer dashboard logic
+│   ├── index.html               # Homepage & auth
+│   ├── client-dashboard.html
+│   └── freelancer-dashboard.html
 └── README.md
-
+```
 
 ## ⚙️ Instalasi & Menjalankan Project
 
 ### 1. Clone Repository
+```
 git clone <repository-url>
 cd FreelanceHub
+```
 
 
 ### 2. Setup Database
 Buat database MySQL dengan nama `freelancer_db` dan jalankan SQL berikut:
-
+```
 CREATE DATABASE freelancer_db;
 USE freelancer_db;
 
@@ -129,11 +132,11 @@ FOREIGN KEY (proposal_id) REFERENCES proposals(id),
 FOREIGN KEY (client_id) REFERENCES users(id),
 FOREIGN KEY (freelancer_id) REFERENCES users(id)
 );
-
+```
 
 ### 3. Konfigurasi Environment
 Buat file `.env` di folder `backend/`: 
-
+```
 PORT=4000
 DB_HOST=localhost
 DB_USER=root
@@ -141,15 +144,20 @@ DB_PASSWORD=
 DB_NAME=freelancer_db
 JWT_SECRET=your-secret-key-change-this-in-production-12345
 NODE_ENV=development
+```
 
 
 ### 4. Install Dependencies
+```
 cd backend
 npm install
+```
 
 ### 5. Jalankan Server
+```
 npm run dev
 npm start
+```
 
 ### 6. Akses Aplikasi
 Buka browser dan akses: 
