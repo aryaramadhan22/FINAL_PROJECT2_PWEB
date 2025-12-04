@@ -165,3 +165,8 @@ Buka browser dan akses:
 - **API Base:** http://localhost:4000/api
 
 
+## Contributors
+
+- **Mohammad Akbar H. B** (5053241023)
+- **Arya Ramadhan** (5053241033)
+
