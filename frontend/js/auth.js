@@ -1,137 +1,108 @@
-// API URL - sesuaikan dengan URL backend Express Anda
 const API_URL = 'http://localhost:4000/api';
 
-// Show Alert
 function showAlert(message, type = 'danger') {
     const alertContainer = document.getElementById('alert-container');
-    const alert = `
+    alertContainer.innerHTML = `
         <div class="alert alert-${type} alert-dismissible fade show" role="alert">
             <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    alertContainer.innerHTML = alert;
-    
-    // Auto dismiss after 5 seconds
+        </div>`;
     setTimeout(() => {
         const alertElement = alertContainer.querySelector('.alert');
-        if (alertElement) {
-            const bsAlert = new bootstrap.Alert(alertElement);
-            bsAlert.close();
-        }
+        if (alertElement) new bootstrap.Alert(alertElement).close();
     }, 5000);
 }
 
-// Handle Login
 document.getElementById('form-login').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
     submitBtn.disabled = true;
 
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
+    const data = {
+        email: document.getElementById('login-email').value,
+        password: document.getElementById('login-password').value
+    };
 
     try {
         const response = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const result = await response.json();
 
-        const data = await response.json();
-
-        if (data.success) {
-            localStorage.setItem('token', data.data.token);
-            localStorage.setItem('user', JSON.stringify(data.data.user));
-            
+        if (result.success) {
+            localStorage.setItem('token', result.data.token);
+            localStorage.setItem('user', JSON.stringify(result.data.user));
             showAlert('Login berhasil! Mengalihkan...', 'success');
-            
             setTimeout(() => {
-                if (data.data.user.role === 'client') {
-                    window.location.href = 'client-dashboard.html';
-                } else {
-                    window.location.href = 'freelancer-dashboard.html';
-                }
+                const redirect = result.data.user.role === 'client' ? 
+                    'client-dashboard.html' : 'freelancer-dashboard.html';
+                window.location.href = redirect;
             }, 1000);
         } else {
-            showAlert(data.message || 'Login gagal', 'danger');
+            showAlert(result.message || 'Login gagal', 'danger');
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
         }
     } catch (error) {
-        showAlert('Terjadi kesalahan koneksi. Pastikan backend sudah berjalan di port 3000!', 'danger');
+        showAlert('Terjadi kesalahan koneksi. Pastikan backend sudah berjalan!', 'danger');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        console.error('Error:', error);
     }
 });
 
-// Handle Register
 document.getElementById('form-register').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
     submitBtn.disabled = true;
 
-    const name = document.getElementById('reg-name').value;
-    const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-password').value;
-    const role = document.getElementById('reg-role').value;
+    const data = {
+        name: document.getElementById('reg-name').value,
+        email: document.getElementById('reg-email').value,
+        password: document.getElementById('reg-password').value,
+        role: document.getElementById('reg-role').value
+    };
 
     try {
         const response = await fetch(`${API_URL}/auth/register`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, email, password, role })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
         });
+        const result = await response.json();
 
-        const data = await response.json();
-
-        if (data.success) {
+        if (result.success) {
             showAlert('Registrasi berhasil! Silakan login.', 'success');
-            
-            // Switch to login tab
             setTimeout(() => {
-                const loginTab = new bootstrap.Tab(document.getElementById('login-tab'));
-                loginTab.show();
-                document.getElementById('login-email').value = email;
+                new bootstrap.Tab(document.getElementById('login-tab')).show();
+                document.getElementById('login-email').value = data.email;
                 e.target.reset();
             }, 1500);
         } else {
-            showAlert(data.message || 'Registrasi gagal', 'danger');
+            showAlert(result.message || 'Registrasi gagal', 'danger');
         }
-        
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     } catch (error) {
-        showAlert('Terjadi kesalahan koneksi. Pastikan backend sudah berjalan di port 3000!', 'danger');
+        showAlert('Terjadi kesalahan koneksi. Pastikan backend sudah berjalan!', 'danger');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        console.error('Error:', error);
     }
 });
 
-// Check if already logged in
 window.addEventListener('load', () => {
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
-    
     if (token && user) {
         const userData = JSON.parse(user);
-        if (userData.role === 'client') {
-            window.location.href = 'client-dashboard.html';
-        } else {
-            window.location.href = 'freelancer-dashboard.html';
-        }
+        const redirect = userData.role === 'client' ? 
+            'client-dashboard.html' : 'freelancer-dashboard.html';
+        window.location.href = redirect;
     }
 });
